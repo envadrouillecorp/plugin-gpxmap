@@ -43,7 +43,8 @@ class Pages_GpxMap_Index {
 
    static public function getCacheFile($file) {
        global $cachepath, $picpath;
-       $path = str_replace($picpath, $cachepath.'/gpxmap', $file->path);
+       $path = str_replace($cachepath.'/json', $cachepath.'/gpxmap', $file->path);
+       $path = str_replace($picpath, $cachepath.'/gpxmap', $path);
        $name = str_replace(".gpx", ".json", $file->name);
        return new File($path, $name);
    }
