@@ -30,7 +30,7 @@ function createMap() {
       center: new google.maps.LatLng(22.593726063929346, 14.23828125),
       zoom: 2,
       scaleControl: true,
-      mapTypeId: 'roadmap',
+      mapTypeId: google.maps.MapTypeId.TERRAIN,
       gestureHandling: 'greedy',
       styles: outStyle,
       backgroundColor: 'hsla(0, 0, 255, 100)',
@@ -43,19 +43,12 @@ function createMap() {
    bounds = new google.maps.LatLngBounds();
 
 
-   var outStyleType = new google.maps.StyledMapType(outStyle, {map: map, name: 'out'}); 
-   map.mapTypes.set('out', outStyleType); 
-   map.setMapTypeId('out'); 
-
-   var inStyleType = new google.maps.StyledMapType(inStyle, {map: map, name: 'in'}); 
-   map.mapTypes.set('in', inStyleType);
-
    google.maps.event.addListener(map, 'zoom_changed', function() { 
       var zoomLevel = map.getZoom();
       if(zoomLevel <= 5)
-         map.setMapTypeId('out');
+         map.setOptions({styles:outStyle});
       else
-         map.setMapTypeId('in'); 
+         map.setOptions({styles:inStyle});
    });
 }
 

@@ -24,7 +24,7 @@
  * http://math.ucsd.edu/~wgarner/math4c/derivations/distance/distptline.htm
  */
 class Douglas {
-   public function simplify_RDP($vertices, $tolerance) {
+   public static function simplify_RDP($vertices, $tolerance) {
       // if this is a multilinestring, then we call ourselves one each segment individually, collect the list, and return that list of simplified lists
       if(!isset($vertices[0][0]))
          return;
