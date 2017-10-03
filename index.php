@@ -37,9 +37,13 @@ class Pages_GpxMap_Index {
 
 
    static public function mainAction() {
+      if(!isset($GLOBALS['gmapsKey'])) {
+         throw new Exception("Please configure the Google Map key in the options");
+      }
       $template = new liteTemplate();
       $template->extraJS[] = './pages/gpxmap/scripts/randomcolors.js';
-      $template->extraJS[] = 'https://maps.google.com/maps/api/js?sensor=false&callback=gmapsLoaded&key=AIzaSyCbi1rhO6dTs_OQuBRtMS2vSRFKlopijGY';
+      $template->extraJS[] = './pages/gpxmap/scripts/gpxmap.common.js';
+      $template->extraJS[] = 'https://maps.google.com/maps/api/js?sensor=false&callback=GpxMapCommon.gmapsLoaded&key='.$GLOBALS['gmapsKey'];
       $template->showPage('gpxmap');
       $template->view();
    }

@@ -1,11 +1,11 @@
 function mainGpx() {
-   if(GLoaded == false) {
-      GLoadedCb = mainGpx;
+   if(GpxMapCommon.GLoaded == false) {
+      GpxMapCommon.GLoadedCb = mainGpx;
       return;
    }
 
    $("#map_canvas").css('height', ($(window).height() - $('#head').height() - 30)+'px');
-   createMap();
+   GpxMapCommon.createMap();
 
    var dirId = 0;
    var nbTracks = 0;
@@ -30,7 +30,7 @@ function mainGpx() {
                return;
             }
             for(var s = 0; s < json.points.length; s++)
-               showTrack(json.points[s], id);
+               GpxMapCommon.showTrack(json.points[s], id);
 
             nbLoadedTracks++;
             updateLoading();
@@ -55,6 +55,11 @@ function mainGpx() {
       batch.launch();
    }
    showDirs([{path:'', name:''}]);
+}
+
+function gm_authFailure() {
+   console.log("error");
+   inform('Google Maps failed to load. Please add a correct Google Map key in the options!', 'error', 'true');
 }
 
 $(document).ready(function() { mainGpx() });
