@@ -25,6 +25,17 @@ class Pages_GpxMap_Index {
       );
    }
 
+   /*static public function getUserFunctions() {
+       return array(
+           file_get_contents('./pages/gpxmap/scripts/jgallery.gpxmap.js')
+       );
+   }*/
+
+   static public function getUserScripts() {
+      return array('./admin/pages/gpxmap/scripts/jgallery.gpxmap.js');
+   }
+
+
    static public function mainAction() {
       $template = new liteTemplate();
       $template->extraJS[] = './pages/gpxmap/scripts/randomcolors.js';
