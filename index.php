@@ -66,7 +66,15 @@ class Pages_GpxMap_Index {
 
 
    static public function getGpxAction() {
+      global $cachepath;
       $file = new File(Controller::getParameter('dir'), Controller::getParameter('gpx'));
+
+      /* Create plugin dir */
+      $cacheDir = $cachepath.'/gpxmap';
+      if(!is_dir($cacheDir)) {
+         @mkdir($cacheDir, 0755, true);
+         @touch("$cacheDir/index.html");
+      }
 
       /* If in cache, return cached version */
       $cached_gpx = Pages_GpxMap_Index::getCacheFile($file);
@@ -102,7 +110,7 @@ class Pages_GpxMap_Index {
       foreach($gpx as $segment) {
          $tolerance = 0.00070;
          $after = Douglas::simplify_RDP($segment, $tolerance);
-         while(count($after) > 70) {
+         while(count($after) > 70 && $tolerance < 0.0014) {
             $tolerance *= 2;
             $after = Douglas::simplify_RDP($after, $tolerance);
          }

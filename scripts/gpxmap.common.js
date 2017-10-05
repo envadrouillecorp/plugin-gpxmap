@@ -22,7 +22,8 @@ var GpxMapCommon = {
    },
 
    createMap: function() {
-      var inStyle = [{featureType:"road",elementType:"geometry",stylers:[{lightness:100},{visibility:"simplified"}]},{"featureType":"water","elementType":"geometry","stylers":[{"visibility":"on"},{"color":"#C6E2FF",}]},{"featureType":"poi","elementType":"geometry.fill","stylers":[{"color":"#C5E3BF"}]},{"featureType":"road","elementType":"geometry.fill","stylers":[{"color":"#D1D1B8"}]}];
+      // Alternate between a very dark google style when dezoomed to the OSM layers when zoomed.
+      // Google has a much better rendering of the earth, while OSM is better suited to display tracks (less intrusive text, better colors + glacier display).
       var outStyle = [{"featureType":"poi","elementType":"all","stylers":[{"hue":"#000000"},{"saturation":-100},{"lightness":-100},{"visibility":"off"}]},{"featureType":"poi","elementType":"all","stylers":[{"hue":"#000000"},{"saturation":-100},{"lightness":-100},{"visibility":"off"}]},{"featureType":"administrative","elementType":"all","stylers":[{"hue":"#000000"},{"saturation":0},{"lightness":-100},{"visibility":"off"}]},{"featureType":"road","elementType":"labels","stylers":[{"hue":"#ffffff"},{"saturation":-100},{"lightness":100},{"visibility":"off"}]},{"featureType":"water","elementType":"labels","stylers":[{"hue":"#000000"},{"saturation":-100},{"lightness":-100},{"visibility":"off"}]},{"featureType":"road.local","elementType":"all","stylers":[{"hue":"#ffffff"},{"saturation":-100},{"lightness":100},{"visibility":"on"}]},{"featureType": "water", "elementType": "geometry.fill", "stylers": [{"color": GpxMapCommon.rgb2hex($('body').css('background-color'))}]},{"featureType":"transit","elementType":"labels","stylers":[{"hue":"#000000"},{"saturation":0},{"lightness":-100},{"visibility":"off"}]},{"featureType":"landscape","elementType":"labels","stylers":[{"hue":"#000000"},{"saturation":-100},{"lightness":-100},{"visibility":"off"}]},{"featureType":"road","elementType":"geometry","stylers":[{"hue":"#bbbbbb"},{"saturation":-100},{"lightness":26},{"visibility":"on"}]},{"featureType":"landscape","elementType":"geometry","stylers":[{"hue":"#dddddd"},{"saturation":-100},{"lightness":-3},{"visibility":"on"}]}];
 
       var options = {
@@ -33,26 +34,39 @@ var GpxMapCommon = {
          gestureHandling: 'greedy',
          styles: outStyle,
          backgroundColor: 'hsla(0, 0, 255, 100)',
-         disableDefaultUI: true,
          mapTypeControlOptions: {
             mapTypeIds: [google.maps.MapTypeId.TERRAIN, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.ROADMAP],
             style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR
          },
       };
       GpxMapCommon.map = new google.maps.Map(document.getElementById("map_canvas"), options);
+      GpxMapCommon.map.mapTypes.set("OSM", new google.maps.ImageMapType({
+         getTileUrl: function(coord, zoom) {
+            var tilesPerGlobe = 1 << zoom;
+            var x = coord.x % tilesPerGlobe;
+            if (x < 0) {
+               x = tilesPerGlobe+x;
+            }
+            return "http://tile.openstreetmap.org/" + zoom + "/" + x + "/" + coord.y + ".png";
+         },
+         tileSize: new google.maps.Size(256, 256),
+         name: "OpenStreetMap",
+         maxZoom: 18
+      }));
 
 
       google.maps.event.addListener(GpxMapCommon.map, 'zoom_changed', function() { 
          var zoomLevel = GpxMapCommon.map.getZoom();
-         if(zoomLevel <= 5)
-            GpxMapCommon.map.setOptions({styles:outStyle});
+         if(zoomLevel <= 7)
+            GpxMapCommon.map.setOptions({styles:outStyle, mapTypeId: google.maps.MapTypeId.TERRAIN});
          else
-            GpxMapCommon.map.setOptions({styles:inStyle});
+            GpxMapCommon.map.setOptions({mapTypeId: "OSM"});
       });
    },
 
    showTrack: function(gpx, id) {
       var points = [];
+      var bounds = new google.maps.LatLngBounds();
       var poly;
 
       if(!gpx)
@@ -68,10 +82,11 @@ var GpxMapCommon = {
          }
          var p = new google.maps.LatLng(lat, lon);
          points.push(p);
+         bounds.extend(p);
       }
 
       /* Draw track */
-      var hues = ['red', 'orange', 'green', 'blue', 'purple', 'pink'];
+      var hues = ['red', 'blue', 'purple', 'pink'];
       var hue = hues[GpxMapCommon.nbTracks%hues.length];
       poly = new google.maps.Polyline({
          path: points,
@@ -82,6 +97,6 @@ var GpxMapCommon = {
       poly.setMap(GpxMapCommon.map);
       GpxMapCommon.nbTracks++;
 
-      return poly;
+      return {poly:poly, bounds:bounds};
    }
 };
