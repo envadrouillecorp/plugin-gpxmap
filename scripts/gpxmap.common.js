@@ -34,12 +34,14 @@ var GpxMapCommon = {
          gestureHandling: 'greedy',
          styles: outStyle,
          backgroundColor: 'hsla(0, 0, 255, 100)',
+         mapTypeControl: true,
+         fullscreenControl: false,
          mapTypeControlOptions: {
             mapTypeIds: [google.maps.MapTypeId.TERRAIN, google.maps.MapTypeId.SATELLITE, google.maps.MapTypeId.ROADMAP],
             style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR
          },
       };
-      GpxMapCommon.map = new google.maps.Map(document.getElementById("map_canvas"), options);
+      GpxMapCommon.map = new google.maps.Map(document.getElementById("map_canvas_gpxmap"), options);
       GpxMapCommon.map.mapTypes.set("OSM", new google.maps.ImageMapType({
          getTileUrl: function(coord, zoom) {
             var tilesPerGlobe = 1 << zoom;
