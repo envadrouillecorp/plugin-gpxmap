@@ -29,17 +29,12 @@ class Pages_GpxMap_Index {
       return "";
    }
 
-   /* We need this function for jgallery.gpxmap.js to be included in userland */
-   static public function getUserScripts() {
-      return array('./admin/pages/gpxmap/scripts/jgallery.gpxmap.js');
-   }
-
    /* Alternatively we could include the code directly in index.html. Better? */
-   /*static public function getUserFunctions() {
+   static public function getUserFunctions() {
        return array(
            file_get_contents('./pages/gpxmap/scripts/jgallery.gpxmap.js')
        );
-   }*/
+   }
 
 
    /* Administration view */
