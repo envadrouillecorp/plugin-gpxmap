@@ -97,7 +97,10 @@ var GpxMapPlugin = {
    leaveMap:function(action) {
       $('#header').css('opacity', 1);
       $('#map_canvas_gpxmap').remove();
-      jGallery.switchPage(action);
+      if(action.startsWith('/'))
+         action = action.substr(1);
+      //jGallery.switchPage(action);
+      window.location.hash = '#!'+action;
    },
 
    /* Action of the map icon: display/hide thumbs */
