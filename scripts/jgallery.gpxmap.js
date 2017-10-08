@@ -241,8 +241,10 @@ var GpxMapPlugin = {
    },
 
    showGPXHook:function() {
-      if(jGallery.currentPage == '')
-         $('#contentb').append('<div style="width: 100%; text-align: center;clear:both" id="gpxmaplink"><a href="#!map" class="translate" style="border-bottom:1px dotted #EEE;text-decoration: none;">'+jGalleryModel.translate('SHOW MAP')+'</a></div>');
+      if(jGallery.currentPage == '') {
+         $('#contentb').append('<div style="width: 100%; text-align: center;clear:both;opacity:0" id="gpxmaplink"><a href="#!map" class="translate" style="border-bottom:1px dotted #EEE;text-decoration: none;">'+jGalleryModel.translate('SHOW MAP')+'</a></div>');
+         $('#gpxmaplink').animate({opacity:1}, 'fast');
+      }
    },
 
    init:function() {
