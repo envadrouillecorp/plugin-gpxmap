@@ -117,10 +117,49 @@ var GpxMapPlugin = {
          GpxMapPlugin.polyLines[p].setVisible(display);
    },
 
+   maxCallsAjax:4,
+   priorityCalls:0,
+   lowpriorityCalls:0,
+   pendingCalls:[],
+   inCache:{},
+   ajaxQueue:function(dir, cb, async) {
+      if(!GpxMapPlugin.inCache[dir] && (GpxMapPlugin.priorityCalls + GpxMapPlugin.lowpriorityCalls > GpxMapPlugin.maxCallsAjax)) {
+         GpxMapPlugin.pendingCalls.push({dir:dir, cb:cb});
+         return;
+      }
+      GpxMapPlugin.lowpriorityCalls++;
+      var json = jGalleryModel.getJSON(dir, function() { GpxMapPlugin.ajaxDequeue(dir, cb); });
+      if(json) {
+         GpxMapPlugin.inCache[dir] = true;
+         GpxMapPlugin.lowpriorityCalls--;
+         if(async)
+            cb();
+         return json;
+      }
+      return;
+   },
+
+   ajaxDequeue:function(dir, cb) {
+      GpxMapPlugin.inCache[dir] = true;
+      cb();
+      GpxMapPlugin.lowpriorityCalls--;
+      GpxMapPlugin.ajaxRelaunch();
+   },
+
+   ajaxRelaunch:function() {
+      if(GpxMapPlugin.pendingCalls.length && (GpxMapPlugin.priorityCalls + GpxMapPlugin.lowpriorityCalls <= GpxMapPlugin.maxCallsAjax)) {
+         var call = GpxMapPlugin.pendingCalls.shift();
+         GpxMapPlugin.ajaxQueue(call.dir, call.cb, true);
+      }
+   },
+
+
    /* Recursively show gpx in directories.
     * The thumbnail of a directory is stored in the parent dir json, so propagate that */
    show:function(dir, thumbs) {
-      var json = jGalleryModel.getJSON(dir, function() { GpxMapPlugin.show(dir, thumbs); });
+      //var json = jGalleryModel.getJSON(dir, function() { GpxMapPlugin.show(dir, thumbs); });
+      // We want to prioritize loading of GPX, so queue dir parsing
+      var json = GpxMapPlugin.ajaxQueue(dir, function() { GpxMapPlugin.show(dir, thumbs); });
 
       if(!json) {
          return; // wait
@@ -140,11 +179,15 @@ var GpxMapPlugin = {
             var url = urls[i].replace(regexp2, config.cacheDir+'/gpxmap');
             url = url.replace(regexp1, config.cacheDir+'/gpxmap');
             url = url.replace(/gpx$/, 'json');
+            GpxMapPlugin.priorityCalls++;
             $.ajax({
              type: "GET",
              url: url,
              dataType:"json",
              success: function(json) {
+                GpxMapPlugin.priorityCalls--;
+                GpxMapPlugin.ajaxRelaunch();
+
                 var tracks = [];
                 for(var s = 0; s < json.points.length; s++) {
                    var track = GpxMapCommon.showTrack(json.points[s], 0);
@@ -176,6 +219,8 @@ var GpxMapPlugin = {
                 GpxMapPlugin.mc.addMarker(marker);
              },
              error:function(e, f) {
+                GpxMapPlugin.priorityCalls--;
+                GpxMapPlugin.ajaxRelaunch();
                 console.log("Cannot load "+url);
              },
            });
