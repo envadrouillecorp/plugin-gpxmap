@@ -20,6 +20,7 @@ g.prototype.onRemove=g.prototype.onRemove;var i={TOP_LEFT:1,TOP:2,TOP_RIGHT:3,LE
 }
 var addRichAdded = false;
 
+var added = false;
 var GpxMapPlugin = {
    loaded:0,
    loadedScripts:{},
@@ -152,20 +153,14 @@ var GpxMapPlugin = {
                 for(var t in tracks) {
                    bounds.extend(tracks[t].bounds.getCenter());
                 }
-                var url = thumbs?jGalleryModel.cacheDir+'/thumbs/'+jGalleryModel.pageToUrl(dir)+'/'+thumbs[0].replace('_m', '_c'):'';
-                /*var marker = new google.maps.Marker({
-                   position: bounds.getCenter(),
-                   title: dir,
-                   icon:{
-                      url: url,
-                      scaledSize: new google.maps.Size(60, 45), // scaled size
-                      origin: new google.maps.Point(0,0), // origin
-                      anchor: new google.maps.Point(30, 23) // anchor
-                   }
-                });*/
+                var url = thumbs?jGalleryModel.cacheDir+'/thumbs'+jGalleryModel.pageToUrl(dir)+''+thumbs[0].replace('_m', '_c'):'';
+                /*if(added)
+                   return;
+                added = true;*/
                 var marker = new RichMarker({
                    position: bounds.getCenter(),
-                   content: '<div class="padding:5px;background-color:white;position:relative;"><img src="'+url+'" style="width:60px;top:-23px;left:-30px;position:absolute;" /></div>',
+                   content: '<div style="background-image:url(\''+url+'\');width:60px;height:60px;position:absolute;top:-34px;left:-34px;border-radius: 50%;background-size: cover;background-position:center;border:4px solid black" />',
+                   shadow:0,
                 });
                 google.maps.event.addListener(marker, 'click', function() {
                    jGallery.switchPage(dir);

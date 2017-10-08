@@ -4,7 +4,7 @@ function mainGpx() {
       return;
    }
 
-   $("#map_canvas").css('height', ($(window).height() - $('#head').height() - 30)+'px');
+   $("#map_canvas_gpxmap").css('height', ($(window).height() - $('#head').height() - 30)+'px');
    GpxMapCommon.createMap();
 
    var dirId = 0;
