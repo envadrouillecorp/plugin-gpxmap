@@ -9,9 +9,9 @@
 class Pages_GpxMap_Index {
    public static $description = "GPX Map";
    public static $isOptional = true;
+   public static $isContentPlugin = true; // that + getTpl is required for index.gpxmap.js to be loaded in the administration
    public static $activatedByDefault = true;
    public static $showOnMenu = true;
-
 
    public static function setupAutoload() {
       AutoLoader::$autoload_path[] = "./pages/index/php/";
@@ -21,21 +21,28 @@ class Pages_GpxMap_Index {
    }
 
    static public function getOptions() {
-      return array(
-      );
+      return array(); // no option for this plugin
    }
 
+   /* We need this function for index.gpxmap.js to be included in the index page */
+   static public function getTpl() {
+      return "";
+   }
+
+   /* We need this function for jgallery.gpxmap.js to be included in userland */
+   static public function getUserScripts() {
+      return array('./admin/pages/gpxmap/scripts/jgallery.gpxmap.js');
+   }
+
+   /* Alternatively we could include the code directly in index.html. Better? */
    /*static public function getUserFunctions() {
        return array(
            file_get_contents('./pages/gpxmap/scripts/jgallery.gpxmap.js')
        );
    }*/
 
-   static public function getUserScripts() {
-      return array('./admin/pages/gpxmap/scripts/jgallery.gpxmap.js');
-   }
 
-
+   /* Administration view */
    static public function mainAction() {
       $template = new liteTemplate();
       $template->extraJS[] = './pages/gpxmap/scripts/randomcolors.js';
@@ -48,6 +55,7 @@ class Pages_GpxMap_Index {
       $template->view();
    }
 
+   /* Recursively go through directories to get gpx */
    static public function getDirContentAction() {
       $dir = new GPXDir(Controller::getParameter('dir'));
       echo File_JSON::myjson_encode(array(
@@ -56,6 +64,7 @@ class Pages_GpxMap_Index {
       ));
    }
 
+   /* Helper: where shall we cache $file? */
    static public function getCacheFile($file) {
        global $cachepath, $picpath;
        $path = str_replace($cachepath.'/json', $cachepath.'/gpxmap', $file->path);
@@ -64,7 +73,7 @@ class Pages_GpxMap_Index {
        return new File($path, $name);
    }
 
-
+   /* Get the simplified track from a gpx (from cache, or creates it) */
    static public function getGpxAction() {
       global $cachepath;
       $file = new File(Controller::getParameter('dir'), Controller::getParameter('gpx'));

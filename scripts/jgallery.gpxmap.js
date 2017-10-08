@@ -193,7 +193,8 @@ var GpxMapPlugin = {
    },
 
    showGPXHook:function() {
-      $('#show').append('<br><a href="#!map" class="translate" style="border-bottom:1px dotted #EEE;text-decoration: none;">'+jGalleryModel.translate('SHOW MAP')+'</a>');
+      if(jGallery.currentPage == '')
+         $('#contentb').append('<div style="width: 100%; text-align: center;clear:both" id="gpxmaplink"><a href="#!map" class="translate" style="border-bottom:1px dotted #EEE;text-decoration: none;">'+jGalleryModel.translate('SHOW MAP')+'</a></div>');
    },
 
    init:function() {
@@ -215,7 +216,6 @@ if(!gm_authFailure) {
 }
 
 function gpxMapChangeLang() {
-   console.log(jGallery.lang);
    if(jGallery.lang == 'fr') {
       var tr = {
          'Map':'Carte',
