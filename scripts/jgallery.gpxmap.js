@@ -30,6 +30,11 @@ var GpxMapPlugin = {
 
    /* Envadrouille interface -- which pages do we want? */
    want:function(action) {
+      // We don't want the action but we are still in display, let's remove our div!
+      if(action != "map" && $('#map_canvas_gpxmap').length) {
+         $('#header').css('opacity', 1);
+         $('#map_canvas_gpxmap').remove();
+      }
       return action == "map";
    },
 
@@ -48,6 +53,13 @@ var GpxMapPlugin = {
          GpxMapPlugin.addRichAdded = true;
          addRich();
       }
+
+      /* Reinitialize variables */
+      GpxMapPlugin.showThumbs = true;
+      GpxMapPlugin.polyLines = [];
+      GpxMapPlugin.dirs = [];
+      GpxMapPlugin.mc = undefined;
+      GpxMapPlugin.markers = [];
 
       /* Remove theme, show map */
       $('#header').animate({opacity:0}, 'fast');
