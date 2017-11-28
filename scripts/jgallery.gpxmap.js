@@ -219,7 +219,7 @@ var GpxMapPlugin = {
                    bounds.extend(tracks[t].bounds.getCenter());
                 }
                 var url = thumbs?jGalleryModel.cacheDir+'/thumbs'+jGalleryModel.pageToUrl(dir)+''+thumbs[0].replace('_m', '_c'):'';
-                url = url.replace("'", "\\'");
+                url = url.replace("'", "\\\\'"); // weird
                 var marker = new RichMarker({
                    position: bounds.getCenter(),
                    content: '<a href="#!'+dir.substr(1)+'"><span style="background-image:url(\''+url+'\');width:60px;height:60px;position:absolute;top:-34px;left:-34px;border-radius: 50%;background-size: cover;background-position:center;border:4px solid black;cursor:pointer;"></span></a>',
