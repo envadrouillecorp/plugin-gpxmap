@@ -241,7 +241,6 @@
     }
 
     if (typeof colorInput === 'string') {
-
       if (colorDictionary[colorInput]) {
         var color = colorDictionary[colorInput];
         if (color.hueRange) {return color.hueRange;}

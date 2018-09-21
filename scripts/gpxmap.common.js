@@ -2,10 +2,11 @@ var GpxMapCommon = {
    map: undefined,
    polyLines:[],
    defaultColor:[],
-
+   nbTracks:0,
 
    createMap:function(cb) {
-      $script('admin/pages/gpxmap/scripts/randomcolors.js', 'randomcolors', function() {
+      GpxMapCommon.nbTracks = 0;
+      $script('admin/pages/gpxmap/scripts/randomcolors.js?'+Math.random(), 'randomcolors', function() {
          $script('admin/pages/gpx/scripts/jgallery.gpx.js?'+Math.random(), 'gpx', function() {
             var m = new map({}, {mapDiv:"map_canvas_gpxmap"});
             m.loadLeaflet(function() {
