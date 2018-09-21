@@ -1,12 +1,8 @@
 function mainGpx() {
-   if(GpxMapCommon.GLoaded == false) {
-      GpxMapCommon.GLoadedCb = mainGpx;
-      return;
-   }
-
    $("#map_canvas_gpxmap").css('height', ($(window).height() - $('#head').height() - 30)+'px');
-   GpxMapCommon.createMap();
-
+   GpxMapCommon.createMap(loadTracks);
+}
+function loadTracks(map) {
    var dirId = 0;
    var nbTracks = 0;
    var nbLoadedTracks = 0;
@@ -55,11 +51,6 @@ function mainGpx() {
       batch.launch();
    }
    showDirs([{path:'', name:''}]);
-}
-
-function gm_authFailure() {
-   console.log("error");
-   inform('Google Maps failed to load. Please add a correct Google Map key in the options!', 'error', 'true');
 }
 
 $(document).ready(function() { mainGpx() });

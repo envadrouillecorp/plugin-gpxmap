@@ -40,12 +40,7 @@ class Pages_GpxMap_Index {
    /* Administration view */
    static public function mainAction() {
       $template = new liteTemplate();
-      $template->extraJS[] = './pages/gpxmap/scripts/randomcolors.js';
       $template->extraJS[] = './pages/gpxmap/scripts/gpxmap.common.js';
-      if(!isset($GLOBALS['gmapsKey']) || $GLOBALS['gmapsKey'] === '')
-         $template->extraJS[] = 'https://maps.google.com/maps/api/js?sensor=false&callback=GpxMapCommon.gmapsLoaded';
-      else
-         $template->extraJS[] = 'https://maps.google.com/maps/api/js?sensor=false&callback=GpxMapCommon.gmapsLoaded&key='.$GLOBALS['gmapsKey'];
       $template->showPage('gpxmap');
       $template->view();
    }

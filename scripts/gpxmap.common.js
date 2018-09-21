@@ -4,31 +4,24 @@ var GpxMapCommon = {
    defaultColor:[],
 
 
-   rgb2hex: function(rgb) {
-      if (/^#[0-9A-F]{6}$/i.test(rgb)) return rgb;
+   createMap:function(cb) {
+      $script('admin/pages/gpxmap/scripts/randomcolors.js', 'randomcolors', function() {
+         $script('admin/pages/gpx/scripts/jgallery.gpx.js?'+Math.random(), 'gpx', function() {
+            var m = new map({}, {mapDiv:"map_canvas_gpxmap"});
+            m.loadLeaflet(function() {
+               $('#map_canvas_gpxmap').removeClass('canvas_loading');
 
-      rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-      function hex(x) {
-         return ("0" + parseInt(x).toString(16)).slice(-2);
-      }
-      return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+               /* Show the map */
+               m.showMap();
+               m.fitBounds(true);
+               $('.leaflet-right').css('right', '40px');
+               GpxMapCommon.map = m;
+
+               cb(m);
+            });
+         });
+      });
    },
-
-   /*addStyle(name, url) {
-      GpxMapCommon.map.mapTypes.set(name, new google.maps.ImageMapType({
-         getTileUrl: function(coord, zoom) {
-            var tilesPerGlobe = 1 << zoom;
-            var x = coord.x % tilesPerGlobe;
-            if (x < 0) {
-               x = tilesPerGlobe+x;
-            }
-            return url(zoom, x, coord.y);
-         },
-         tileSize: new google.maps.Size(256, 256),
-         name: name,
-         maxZoom: 18
-      }));
-   },*/
 
    showTrack: function(gpx, id) {
       var points = [];

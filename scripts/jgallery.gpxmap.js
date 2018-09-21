@@ -18,29 +18,20 @@ var GpxMapPlugin = {
       /* Remove theme, show map */
       $('#header').animate({opacity:0}, 'fast');
       $("body").append("<div id='map_canvas_gpxmap' style='position:absolute;height:100%;width:100%;z-index:2;top:0'></div>");
-      $script('admin/pages/gpx/scripts/jgallery.gpx.js?'+Math.random(), 'gpx', function() {
-         $script('admin/pages/gpxmap/scripts/gpxmap.common.js?'+Math.random(), 'gpxmapcommon', function() {
-            GpxMapPlugin.map = new map({}, {mapDiv:"map_canvas_gpxmap"});
-            GpxMapPlugin.map.loadLeaflet(function() {
-               $('#map_canvas_gpxmap').removeClass('canvas_loading');
-               /* Show the map */
-               GpxMapPlugin.map.showMap();
-               $('.leaflet-right').css('right', '40px');
-               GpxMapPlugin.map.fitBounds(true);
-               GpxMapCommon.map = GpxMapPlugin.map;
-               /* Wait for all tiles to be loaded and then load the tracks */
-               /* We wait otherwise the tracks are shown on a black map... */
-               GpxMapPlugin.map.getCurrentTileLayers()[0].once('load', function() {
-                  $script('admin/pages/gpxmap/scripts/randomcolors.js', 'randomcolors', function() {
-                     GpxMapPlugin.map.loadLeafletCluster(function() {
-                        GpxMapPlugin.mc = new L.markerClusterGroup({showCoverageOnHover:false});
-                        GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);
-                        GpxMapPlugin.show('');
-                     });
-                  });
+      $script('admin/pages/gpxmap/scripts/gpxmap.common.js?'+Math.random(), 'gpxmapcommon', function() {
+         GpxMapCommon.createMap(function(map) {
+            GpxMapPlugin.map = map;
+
+            /* Wait for all tiles to be loaded and then load the tracks */
+            /* We wait otherwise the tracks are shown on a black map... */
+            map.getCurrentTileLayers()[0].once('load', function() {
+               GpxMapPlugin.map.loadLeafletCluster(function() {
+                  GpxMapPlugin.mc = new L.markerClusterGroup({showCoverageOnHover:false});
+                  GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);
+                  GpxMapPlugin.show('');
                });
             });
-         });
+         })
       });
       $('#content').animate({opacity:1}, "fast");
 
@@ -180,9 +171,7 @@ var GpxMapPlugin = {
                 for(var t in tracks)
                    bounds.extend(tracks[t].bounds);
                 var url = thumbs?jGalleryModel.cacheDir+'/thumbs'+jGalleryModel.pageToUrl(dir)+''+thumbs[0].replace('_m', '_c'):'';
-                //url = url.replace("'", "\\\\'"); // weird
                 var marker = new L.marker(bounds.getCenter(), {
-                   /*icon: L.icon({iconUrl:url, iconSize:[60, 60], iconAnchor:[30, 30]}),*/
                    icon: L.divIcon({html:'<a href="#!'+dir.substr(1)+'"><span style="background-image:url(\''+url+'\');width:60px;height:60px;position:absolute;top:-34px;left:-34px;border-radius: 50%;background-size: cover;background-position:center;border:4px solid black;cursor:pointer;"></span></a>' })
                 });
                 marker.on('click', function(e) {
