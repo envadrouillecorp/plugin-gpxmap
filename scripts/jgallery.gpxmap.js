@@ -1,107 +1,68 @@
 var GpxMapPlugin = {
+   map:undefined,          /* Map object */
    showThumbs:true,        /* Display thumbs on the map?*/
-   addRichAdded:false,   /* The RichMarker plugin requires to be manually activated. Has it been done? */
-   polyLines:[],           /* Lines on the map */
+   polyLines:[],
    dirs:[],                /* polyLines[i] is in dir[i] (url of directory) */
    mc:undefined,           /* MarkerCluster object -- main cluster manager */
-   markers:[],             /* RichMarkers (thumbs) displayed on the map */
 
-   /* We need to load many external .js files before being able to display the map... */
-   loadScripts:function() {
-      var loaded = 0;
-      if($script.loaded['gpxmap'] === undefined)
-         $script('./admin/pages/gpxmap/scripts/gpxmap.common.js', 'gpxmap', GpxMapPlugin.ready);
-      else if($script.loaded['gpxmap']) loaded++;
-      if(!$script.loaded['randomcolors'])
-         $script('./admin/pages/gpxmap/scripts/randomcolors.js', 'randomcolors', GpxMapPlugin.ready);
-      else if($script.loaded['randomcolors']) loaded++;
-      if(!$script.loaded['gmapsclusters'])
-         $script('./admin/pages/gpx/scripts/markerclusterer_packed.js', 'gmapsclusters', GpxMapPlugin.ready);
-      else if($script.loaded['gmapsclusters']) loaded++;
-      if($script.loaded['gmaps'] === undefined)
-         $script('https://maps.google.com/maps/api/js?callback=GpxMapPlugin.ready&key='+config.gmapsKey, 'gmaps');
-      else if (typeof google === 'object' && typeof google.maps === 'object')
-         loaded++;
-      if($script.loaded['richmarker'] === undefined)
-         $script('./admin/pages/gpxmap/scripts/richmarker.js', 'richmarker', GpxMapPlugin.ready);
-      else if($script.loaded['richmarker']) loaded++;
-      return loaded == 5;
-   },
-
-   /* Envadrouille interface -- which pages do we want? */
-   want:function(action) {
-      // We don't want the action but we are still in display, let's remove our div!
-      if(action != "map" && $('#map_canvas_gpxmap').length) {
-         $('#header').css('opacity', 1);
-         $('#map_canvas_gpxmap').remove();
-      }
-      return action == "map";
-   },
-
-   /* If we are in charge of this page, display it!*/
    handle:function(action) {
       document.title = 'Photos :: Map';
-      if(!GpxMapPlugin.loadScripts()) {
-         page.loaded = false;
-         page.showLoading();
-         return;
-      }
-      page.loaded = true;
-
-      /* Richmarker requires delayed activation because it needs google.maps to exists */
-      if(!GpxMapPlugin.addRichAdded) {
-         GpxMapPlugin.addRichAdded = true;
-         addRich();
-      }
 
       /* Reinitialize variables */
+      GpxMapPlugin.map = undefined;
       GpxMapPlugin.showThumbs = true;
       GpxMapPlugin.polyLines = [];
       GpxMapPlugin.dirs = [];
       GpxMapPlugin.mc = undefined;
-      GpxMapPlugin.markers = [];
 
       /* Remove theme, show map */
       $('#header').animate({opacity:0}, 'fast');
       $("body").append("<div id='map_canvas_gpxmap' style='position:absolute;height:100%;width:100%;z-index:2;top:0'></div>");
-      GpxMapCommon.createMap();
+      $script('admin/pages/gpx/scripts/jgallery.gpx.js?'+Math.random(), 'gpx', function() {
+         $script('admin/pages/gpxmap/scripts/gpxmap.common.js?'+Math.random(), 'gpxmapcommon', function() {
+            GpxMapPlugin.map = new map({}, {mapDiv:"map_canvas_gpxmap"});
+            GpxMapPlugin.map.loadLeaflet(function() {
+               $('#map_canvas_gpxmap').removeClass('canvas_loading');
+               /* Show the map */
+               GpxMapPlugin.map.showMap();
+               $('.leaflet-right').css('right', '40px');
+               GpxMapPlugin.map.fitBounds(true);
+               GpxMapCommon.map = GpxMapPlugin.map;
+               /* Wait for all tiles to be loaded and then load the tracks */
+               /* We wait otherwise the tracks are shown on a black map... */
+               GpxMapPlugin.map.getCurrentTileLayers()[0].once('load', function() {
+                  $script('admin/pages/gpxmap/scripts/randomcolors.js', 'randomcolors', function() {
+                     GpxMapPlugin.map.loadLeafletCluster(function() {
+                        GpxMapPlugin.mc = new L.markerClusterGroup({showCoverageOnHover:false});
+                        GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);
+                        GpxMapPlugin.show('');
+                     });
+                  });
+               });
+            });
+         });
+      });
       $('#content').animate({opacity:1}, "fast");
 
-      /* Create picture clusters */
-      GpxMapCommon.map.setOptions({fullScreenControl: false});
-      GpxMapPlugin.mc = new MarkerClusterer(GpxMapCommon.map, []);
-      GpxMapPlugin.mc.setZoomOnClick(false);
-
-      /* Recursively go through all directories to display tracks
-       * Only do so when the map is loaded otherwise this gets priority and the full
-       * map takes forever to show... */
-      var listenerHandle = google.maps.event.addListener(GpxMapCommon.map, 'idle', function() {
-         google.maps.event.removeListener(listenerHandle);
-         GpxMapPlugin.show('');
-      });
-
       /* Create map icon at the bottom to remove thumb layer */
-      var control = document.createElement('div');
-      $(control).html("<img id='map_pics_gpxmap' src='admin/pages/gpxmap/css/map_location.png' style='width:50px;cursor:pointer;' />");
-      google.maps.event.addDomListener(control, 'click', function() {
-         if(GpxMapPlugin.showThumbs)
-            GpxMapPlugin.showThumbs = false;
-         else
-            GpxMapPlugin.showThumbs = true;
-         GpxMapPlugin.displayClusters(GpxMapPlugin.showThumbs);
+      var control = $("#map_canvas_gpxmap").append("<div style='z-index:99999;bottom:5px;left:50%;position:absolute;'><img id='map_pics_gpxmap_thumbs' src='admin/pages/gpxmap/css/map_location.png' style='width:50px;cursor:pointer;z-index:99999' /></div>");
+      $('#map_pics_gpxmap_thumbs').click(function() {
+         if(!GpxMapPlugin.mc)
+            return;
+         if(GpxMapPlugin.showThumbs) {
+            GpxMapPlugin.map.map.removeLayer(GpxMapPlugin.mc);
+         } else {
+            GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);
+         }
+         GpxMapPlugin.showThumbs = !GpxMapPlugin.showThumbs;
          $('#map_pics_gpxmap').css('opacity', GpxMapPlugin.showThumbs?1:0.5);
       });
-      control.index = 1;   
-      GpxMapCommon.map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push(control);  
 
       /* ... and close button top right */
-      var close = document.createElement('div');
-      $(close).html("<img id='map_pics_gpxmap' src='themes/_common/fsclose.png' style='width:28px;margin:3px;cursor:pointer;' />");
-      google.maps.event.addDomListener(close, 'click', function() {
+      var close = $("#map_canvas_gpxmap").append("<div style='z-index:99999;top:5px;right:5px;position:absolute;'><img id='map_pics_gpxmap_close' src='themes/_common/fsclose.png' style='width:28px;margin:3px;cursor:pointer;' /></div>");
+      $('#map_pics_gpxmap_close').click(function() {
          GpxMapPlugin.leaveMap('');
       });
-      close.index = 1;   
-      GpxMapCommon.map.controls[google.maps.ControlPosition.TOP_RIGHT].push(close);  
    },
 
    /* When we exit the map view we need to do some cleaning,
@@ -204,7 +165,8 @@ var GpxMapPlugin = {
                 for(var s = 0; s < json.points.length; s++) {
                    var track = GpxMapCommon.showTrack(json.points[s], 0);
                    if(track) {
-                      google.maps.event.addListener(track.poly, 'click', function() {
+                      track.poly.on('click', function(e) {
+                         L.DomEvent.stopPropagation(e);
                          GpxMapPlugin.leaveMap(dir);
                       });
                       tracks.push(track);
@@ -214,22 +176,20 @@ var GpxMapPlugin = {
                 }
 
                 /* Put the thumbnail in the middle of the track */
-                var bounds = new google.maps.LatLngBounds();
-                for(var t in tracks) {
-                   bounds.extend(tracks[t].bounds.getCenter());
-                }
+                var bounds = new L.latLngBounds;
+                for(var t in tracks)
+                   bounds.extend(tracks[t].bounds);
                 var url = thumbs?jGalleryModel.cacheDir+'/thumbs'+jGalleryModel.pageToUrl(dir)+''+thumbs[0].replace('_m', '_c'):'';
-                url = url.replace("'", "\\\\'"); // weird
-                var marker = new RichMarker({
-                   position: bounds.getCenter(),
-                   content: '<a href="#!'+dir.substr(1)+'"><span style="background-image:url(\''+url+'\');width:60px;height:60px;position:absolute;top:-34px;left:-34px;border-radius: 50%;background-size: cover;background-position:center;border:4px solid black;cursor:pointer;"></span></a>',
-                   shadow:0,
+                //url = url.replace("'", "\\\\'"); // weird
+                var marker = new L.marker(bounds.getCenter(), {
+                   /*icon: L.icon({iconUrl:url, iconSize:[60, 60], iconAnchor:[30, 30]}),*/
+                   icon: L.divIcon({html:'<a href="#!'+dir.substr(1)+'"><span style="background-image:url(\''+url+'\');width:60px;height:60px;position:absolute;top:-34px;left:-34px;border-radius: 50%;background-size: cover;background-position:center;border:4px solid black;cursor:pointer;"></span></a>' })
                 });
-                google.maps.event.addListener(marker, 'click', function() {
+                marker.on('click', function(e) {
+                   L.DomEvent.stopPropagation(e);
                    GpxMapPlugin.leaveMap(dir);
                 });
-                GpxMapPlugin.markers.push(marker);
-                GpxMapPlugin.mc.addMarker(marker);
+                GpxMapPlugin.mc.addLayer(marker);
              },
              error:function(e, f) {
                 GpxMapPlugin.priorityCalls--;
@@ -246,45 +206,4 @@ var GpxMapPlugin = {
          GpxMapPlugin.show(dir+'/'+d.url, d.thumbs);
       }
    },
-
-   /* Helper called everytime a script is loaded; it refreshes the view until everything is loaded */
-   ready:function(e) {
-      if(jGallery.currentPage == "map")
-         GpxMapPlugin.handle("map");
-   },
-
-   showGPXHook:function() {
-      if(jGallery.currentPage == '') {
-         $('#contentb').append('<div style="width: 100%; text-align: center;clear:both;opacity:0" id="gpxmaplink"><a href="#!map" class="translate" style="border-bottom:1px dotted #EEE;text-decoration: none;">'+jGalleryModel.translate('SHOW MAP')+'</a></div>');
-         $('#gpxmaplink').animate({opacity:1}, 'fast');
-      }
-   },
-
-   init:function() {
-      jGallery.plugins.push(GpxMapPlugin);
-      config.content_order.push('gpxmap');
-      config.contentPlugins['gpxmap'] = GpxMapPlugin.showGPXHook;
-      gpxMapChangeLang();
-      $('<div class="customtranslate"/>').bind('languagechangeevt', gpxMapChangeLang).appendTo($('body'));
-   },
 };
-
-config.pluginsInstances.push(GpxMapPlugin);
-if(!gm_authFailure) {
-   function gm_authFailure() {
-      $('#content').html('');
-      $('#content').css('opacity', 1);
-      jGallery.theme.showError({Error:"Invalid Google Map key. Please add a correct Google Map key in the administration options."});
-   }
-}
-
-function gpxMapChangeLang() {
-   if(jGallery.lang == 'fr') {
-      var tr = {
-         'Map':'Carte',
-         'SHOW MAP':'AFFICHER LA CARTE',
-      };
-      config.tr = $.extend(config.tr, tr);
-   }
-}
-

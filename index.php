@@ -32,7 +32,7 @@ class Pages_GpxMap_Index {
    /* Alternatively we could include the code directly in index.html. Better? */
    static public function getUserFunctions() {
        return array(
-           file_get_contents('./pages/gpxmap/scripts/jgallery.gpxmap.js')
+           file_get_contents('./pages/gpxmap/scripts/jgallery.gpxmap.fun.js')
        );
    }
 
