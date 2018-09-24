@@ -39,9 +39,12 @@ class Pages_GpxMap_Index {
 
    /* Administration view */
    static public function mainAction() {
+      if(!isset($GLOBALS['gpx_tiles']))
+         $GLOBALS['gpx_tiles'] = '';
       $template = new liteTemplate();
       $template->extraJS[] = './pages/gpxmap/scripts/gpxmap.common.js';
       $template->showPage('gpxmap');
+      $template->assign(array('TILES' => $GLOBALS['gpx_tiles']));
       $template->view();
    }
 

@@ -21,10 +21,11 @@ var GpxMapPlugin = {
       $script('admin/pages/gpxmap/scripts/gpxmap.common.js?'+Math.random(), 'gpxmapcommon', function() {
          GpxMapCommon.createMap(function(map) {
             GpxMapPlugin.map = map;
+            GpxMapCommon.addLayers();
 
             /* Wait for all tiles to be loaded and then load the tracks */
             /* We wait otherwise the tracks are shown on a black map... */
-            map.getCurrentTileLayers()[0].once('load', function() {
+            GpxMapCommon.cartoDB.once('load', function() {
                GpxMapPlugin.map.loadLeafletCluster(function() {
                   GpxMapPlugin.mc = new L.markerClusterGroup({showCoverageOnHover:false});
                   GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);
