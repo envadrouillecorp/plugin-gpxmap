@@ -90,7 +90,7 @@ class Pages_GpxMap_Index {
       }
 
       /* Otherwise, parse GPX */
-      $xml = simplexml_load_file($file->completePath);
+      $xml = simplexml_load_file($file->completePath, "SimpleXMLElement", LIBXML_NOWARNING);
 
       /* One array per individual section (track or segment) */
       $gpx = array();
