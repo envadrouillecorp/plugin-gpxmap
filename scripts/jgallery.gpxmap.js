@@ -25,17 +25,18 @@ var GpxMapPlugin = {
             GpxMapPlugin.leafletMap = map.map;
             GpxMapCommon.addLayers();
 
+            /* Restore old position */
             var pos = action.match(/map\/(\d+)\/(-?[\d\.]+)\/(-?[\d\.]+)/);
             if(pos)
                 GpxMapPlugin.leafletMap.flyTo([pos[2], pos[3]], pos[1]);
 
+            /* Update url on position change */
             GpxMapPlugin.leafletMap.on('moveend', function(e) {
                var center = GpxMapPlugin.leafletMap.getCenter();
                var zoom = GpxMapPlugin.leafletMap.getZoom();
                history.replaceState('', '', '#!map/'+zoom+"/"+center.lat+"/"+center.lng);
             });
 
-            GpxMapPlugin.loadLeafletMeasure
             /* Wait for all tiles to be loaded and then load the tracks */
             /* We wait otherwise the tracks are shown on a black map... */
             GpxMapCommon.cartoDB.once('load', function() {
