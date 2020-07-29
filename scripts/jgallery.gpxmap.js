@@ -1,5 +1,6 @@
 var GpxMapPlugin = {
    map:undefined,          /* Map object */
+   leafletMap:undefined,          /* Map object */
    showThumbs:true,        /* Display thumbs on the map?*/
    polyLines:[],
    dirs:[],                /* polyLines[i] is in dir[i] (url of directory) */
@@ -21,8 +22,20 @@ var GpxMapPlugin = {
       $script('admin/pages/gpxmap/scripts/gpxmap.common.js?'+Math.random(), 'gpxmapcommon', function() {
          GpxMapCommon.createMap(function(map) {
             GpxMapPlugin.map = map;
+            GpxMapPlugin.leafletMap = map.map;
             GpxMapCommon.addLayers();
 
+            var pos = action.match(/map\/(\d+)\/(-?[\d\.]+)\/(-?[\d\.]+)/);
+            if(pos)
+                GpxMapPlugin.leafletMap.flyTo([pos[2], pos[3]], pos[1]);
+
+            GpxMapPlugin.leafletMap.on('moveend', function(e) {
+               var center = GpxMapPlugin.leafletMap.getCenter();
+               var zoom = GpxMapPlugin.leafletMap.getZoom();
+               history.replaceState('', '', '#!map/'+zoom+"/"+center.lat+"/"+center.lng);
+            });
+
+            GpxMapPlugin.loadLeafletMeasure
             /* Wait for all tiles to be loaded and then load the tracks */
             /* We wait otherwise the tracks are shown on a black map... */
             GpxMapCommon.cartoDB.once('load', function() {

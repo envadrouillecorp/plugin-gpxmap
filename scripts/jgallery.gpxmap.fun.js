@@ -5,7 +5,7 @@ var GpxMapPluginHandle = {
          $('#header').css('opacity', 1);
          $('#map_canvas_gpxmap').remove();
       }
-      return action == "map";
+      return action.match(/^map/);
    },
 
    /* If we are in charge of this page, display it!*/

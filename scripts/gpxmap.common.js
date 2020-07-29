@@ -17,7 +17,7 @@ var GpxMapCommon = {
                m.fitBounds(true);
                $('.leaflet-right').css('right', '40px');
                GpxMapCommon.map = m;
-
+               GpxMapCommon.loadLeafletMeasure();
                cb(m);
             });
          });
@@ -72,5 +72,16 @@ var GpxMapCommon = {
       GpxMapCommon.defaultColor.push(color);
 
       return {poly:poly, bounds:bounds};
-   }
+   },
+
+    /* Load the measuring tool */
+   loadLeafletMeasure:function(cb) {
+      jGallery.addCss("admin/pages/gpxmap/css/Leaflet.PolylineMeasure.css", "PolylineMeasureCss", function() {
+         $script('admin/pages/gpxmap/scripts/Leaflet.PolylineMeasure.js', 'PolylineMeasureJs', function() {
+            L.control.polylineMeasure({position:'topleft', unit:'metres', showBearings:false, clearMeasurementsOnStop: false, showClearControl: true, showUnitControl: false}).addTo(GpxMapCommon.map.map);
+            if(cb)
+               cb();
+         });
+      });
+   },
 };
