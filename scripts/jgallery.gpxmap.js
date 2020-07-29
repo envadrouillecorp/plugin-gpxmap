@@ -28,7 +28,7 @@ var GpxMapPlugin = {
             /* Restore old position */
             var pos = action.match(/map\/(\d+)\/(-?[\d\.]+)\/(-?[\d\.]+)/);
             if(pos)
-                GpxMapPlugin.leafletMap.flyTo([pos[2], pos[3]], pos[1]);
+                GpxMapPlugin.leafletMap.flyTo([parseFloat(pos[2]), parseFloat(pos[3])], parseInt(pos[1], 10));
 
             /* Update url on position change */
             GpxMapPlugin.leafletMap.on('moveend', function(e) {
