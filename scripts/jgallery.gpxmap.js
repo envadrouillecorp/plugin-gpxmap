@@ -39,7 +39,7 @@ var GpxMapPlugin = {
 
             /* Wait for all tiles to be loaded and then load the tracks */
             /* We wait otherwise the tracks are shown on a black map... */
-            GpxMapCommon.cartoDB.once('load', function() {
+            GpxMapCommon.defaultLayer.once('load', function() {
                GpxMapPlugin.map.loadLeafletCluster(function() {
                   GpxMapPlugin.mc = new L.markerClusterGroup({showCoverageOnHover:false});
                   GpxMapPlugin.map.map.addLayer(GpxMapPlugin.mc);

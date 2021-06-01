@@ -24,15 +24,17 @@ var GpxMapCommon = {
       });
    },
 
-   cartoDB:undefined,
+   defaultLayer:undefined,
    addLayers: function() {
-      if(GpxMapCommon.map.layers['CartoDB'])
-         GpxMapCommon.cartoDB = GpxMapCommon.map.layers['CartoDB'];
+		if(!config.gpxmap_default_map)
+			config.gpxmap_default_map = 'CartoDB';
+      if(GpxMapCommon.map.layers[config.gpxmap_default_map])
+         GpxMapCommon.defaultLayer = GpxMapCommon.map.layers[config.gpxmap_default_map];
       else
-         GpxMapCommon.cartoDB = L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png", {attribution:'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'});
+         GpxMapCommon.defaultLayer = L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png", {attribution:'&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'});
 
       GpxMapCommon.map.map.removeLayer(GpxMapCommon.map.getCurrentTileLayers()[0]);
-      GpxMapCommon.cartoDB.addTo(GpxMapCommon.map.map);
+      GpxMapCommon.defaultLayer.addTo(GpxMapCommon.map.map);
    },
 
    showTrack: function(gpx, id) {

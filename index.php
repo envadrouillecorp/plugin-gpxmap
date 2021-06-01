@@ -21,7 +21,9 @@ class Pages_GpxMap_Index {
    }
 
    static public function getOptions() {
-      return array(); // no option for this plugin
+		return array(
+         array('id' => 'gpxmap_default_map', 'type' => 'text', 'cat' => 'GPX Map', 'default' => "CartoDB", 'export' => true),
+		);
    }
 
    /* We need this function for index.gpxmap.js to be included in the index page */
