@@ -4,6 +4,7 @@ var GpxMapPluginHandle = {
       if(action != "map" && $('#map_canvas_gpxmap').length) {
          $('#header').css('opacity', 1);
          $('#map_canvas_gpxmap').remove();
+         $('#map_canvas_filter').remove();
       }
       return action.match(/^map/);
    },

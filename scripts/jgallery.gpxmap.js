@@ -5,6 +5,7 @@ var GpxMapPlugin = {
    polyLines:[],
    dirs:[],                /* polyLines[i] is in dir[i] (url of directory) */
    mc:undefined,           /* MarkerCluster object -- main cluster manager */
+   polyLinesObservers:[],      /* List of functions to call when adding a track */
 
    handle:function(action) {
       document.title = 'Photos :: Map';
@@ -51,8 +52,9 @@ var GpxMapPlugin = {
       $('#content').animate({opacity:1}, "fast");
 
       /* Create map icon at the bottom to remove thumb layer */
-      var control = $("#map_canvas_gpxmap").append("<div style='z-index:99999;bottom:5px;left:50%;position:absolute;'><img id='map_pics_gpxmap_thumbs' src='admin/pages/gpxmap/css/map_location.png' style='width:50px;cursor:pointer;z-index:99999' /></div>");
-      $('#map_pics_gpxmap_thumbs').click(function() {
+      $("#map_canvas_gpxmap").append("<div id='map_canvas_controls' style='z-index:99999;bottom:5px;left:50%;position:absolute;transform: translateX(-50%);'></div>");
+      $("#map_canvas_controls").append("<img id='map_pics_gpxmap_thumb' src='admin/pages/gpxmap/css/map_location.png' style='width:50px;cursor:pointer;' />");
+      $('#map_pics_gpxmap_thumb').click(function() {
          if(!GpxMapPlugin.mc)
             return;
          if(GpxMapPlugin.showThumbs) {
@@ -64,10 +66,121 @@ var GpxMapPlugin = {
          $('#map_pics_gpxmap').css('opacity', GpxMapPlugin.showThumbs?1:0.5);
       });
 
+      /* Create a button to show/hide the filters */
+      $("#map_canvas_controls").append("<span style='width:10px;'></span><img id='map_filter_gpxmap_thumb' src='admin/pages/gpxmap/css/map_filter.png' style='width:50px;cursor:pointer;' />");
+      $('#map_filter_gpxmap_thumb').click(function(e) {
+          if($("#map_canvas_filter").length) {
+                  $("#map_canvas_filter").toggle();
+          } else {
+                  GpxMapPlugin.showFilter();
+          }
+          e.stopPropagation();
+      });
+      $('#map_filter_gpxmap_thumb').dblclick(function(e) {
+         return false;
+      });
+
       /* ... and close button top right */
       var close = $("#map_canvas_gpxmap").append("<div style='z-index:99999;top:5px;right:5px;position:absolute;'><img id='map_pics_gpxmap_close' src='themes/_common/fsclose.png' style='width:28px;margin:3px;cursor:pointer;' /></div>");
       $('#map_pics_gpxmap_close').click(function() {
          GpxMapPlugin.leaveMap('');
+      });
+   },
+
+   showFilter:function() {
+      /* Create a filter options at the bottom */
+      $("body").append(
+         `<div id='map_canvas_filter' style='z-index:99998;bottom:60px;left:50%;position:absolute;transform: translateX(-50%);box-shadow:0 1px 2px rgba(0,0,0,0.07),0 2px 4px rgba(0,0,0,0.07),0 4px 8px rgba(0,0,0,0.07),0 8px 16px rgba(0,0,0,0.07),0 16px 32px rgba(0,0,0,0.07),0 32px 64px rgba(0,0,0,0.07);background-color:#FFF;width:90%;min-height:50px;padding-top:30px;color:#000'>
+            <div style="width:90%;display:flex;left:50%;position:absolute;transform: translateX(-50%);">
+               <label style="display:inline-block;padding-right:30px;" class="customtranslate">${jGalleryModel.translate('Years range')}</label>
+               <div style="flex:1;transform: translateY(7px);">
+                       <div id='gpxmap-slider-range'></div>
+                       <strong style="padding-left:10px">Min:</strong> <span id="slider-range-value1"></span>
+                       <div style="position:absolute;right:10px;display:inline"><strong>Max:</strong> <span id="slider-range-value2"></span></div>
+               </div>
+            </div>
+         </div>`);
+      jGallery.addCss("admin/pages/gpxmap/css/slider.css", "GpxMapSliderCss", function() {
+              $script('admin/pages/gpxmap/scripts/slider.js?'+Math.random(), 'gpxmapslider', function() {
+                      var rangeSlider = document.getElementById('gpxmap-slider-range');
+                      var min = undefined, max = undefined;
+
+                      function update_range(poly) {
+                         if(poly.date && (poly.date < min || !min))
+                              min = parseInt(poly.date, 10);
+                         if(poly.date && (poly.date > max || !max))
+                              max = parseInt(poly.date, 10);
+                         if(!rangeSlider.noUiSlider)
+                              return;
+                         var update_min = true;
+                         var update_max = true;
+                         if(rangeSlider.noUiSlider.options.range) {
+                              update_min = rangeSlider.noUiSlider.options.range.min == rangeSlider.noUiSlider.get(true)[0];
+                              update_max = rangeSlider.noUiSlider.options.range.max == rangeSlider.noUiSlider.get(true)[1];
+                         }
+                         if(min == max) /* Avoid error on the first update */
+                              min = max - 1;
+                         rangeSlider.noUiSlider.updateOptions({
+                              range: {
+                                      'min': min,
+                                      'max': max
+                              }
+                         });
+                         if(update_min || update_max) {
+                              rangeSlider.noUiSlider.set([update_min?min:null, update_max?max:null]);
+                              $('#slider-range-value1').html(new Date(min).toISOString().split('T')[0]);
+                              $('#slider-range-value2').html(new Date(max).toISOString().split('T')[0]);
+                         }
+                      }
+
+                      for(var t in GpxMapCommon.polyLines)
+                              update_range(GpxMapCommon.polyLines[t]);
+                      GpxMapPlugin.polyLinesObservers.push(update_range);
+
+                      var default_date = new Date().getTime();
+                      console.log( [min?min:default_date, max?max:default_date] );
+                      noUiSlider.create(rangeSlider, {
+                              start: [min?min:default_date, max?max:(default_date+1)],
+                              step: 1,
+                              range: {
+                                      'min': [min?min:default_date],
+                                      'max': [max?max:(default_date+1)]
+                              },
+                              connect: true
+                      });
+
+          
+                      rangeSlider.noUiSlider.on('update', function(values, handle) {
+                         $('#slider-range-value1').html(new Date(parseInt(values[0], 10)).toISOString().split('T')[0]);
+                         $('#slider-range-value2').html(new Date(parseInt(values[1], 10)).toISOString().split('T')[0]);
+                      });
+
+                      rangeSlider.noUiSlider.on('change', function(values, handle) {
+                         var current_min = parseInt(values[0], 10);
+                         var current_max = parseInt(values[1], 10);
+                         for(var t in GpxMapCommon.polyLines) {
+                              var poly = GpxMapPlugin.polyLines[t];
+                              var display = true;
+                              var displayed = GpxMapPlugin.map.map.hasLayer(poly);
+                              if(!poly.date)
+                                      display = false;
+                              else if(poly.date < current_min)
+                                      display = false;
+                              else if (poly.date > current_max)
+                                      display = false;
+                              if(display && !displayed) {
+                                 poly.addTo(GpxMapCommon.map.map);
+                                 if(poly.marker)
+                                      GpxMapPlugin.mc.addLayer(poly.marker);
+                              }
+                              if(!display && displayed) {
+                                 poly.remove(GpxMapCommon.map.map);
+                                 if(poly.marker)
+                                         GpxMapPlugin.mc.removeLayer(poly.marker);
+                              }
+                         }
+                      });
+              });
       });
    },
 
@@ -76,24 +189,11 @@ var GpxMapPlugin = {
    leaveMap:function(action) {
       $('#header').css('opacity', 1);
       $('#map_canvas_gpxmap').remove();
+      $('#map_canvas_filter').remove();
       if(action.startsWith('/'))
          action = action.substr(1);
       //jGallery.switchPage(action);
       window.location.hash = '#!'+action;
-   },
-
-   /* Action of the map icon: display/hide thumbs */
-   displayClusters:function(display) {
-      if(!display)
-         GpxMapPlugin.mc.clearMarkers();
-      else
-         GpxMapPlugin.mc.addMarkers(GpxMapPlugin.markers);
-   },
-
-   /* Same for polylines */
-   displayPolylines:function(display) {
-      for(p in GpxMapPlugin.polyLines)
-         GpxMapPlugin.polyLines[p].setVisible(display);
    },
 
    maxCallsAjax:4,
@@ -167,6 +267,9 @@ var GpxMapPlugin = {
                 GpxMapPlugin.priorityCalls--;
                 GpxMapPlugin.ajaxRelaunch();
 
+                var m = dir.match( jGalleryModel.dirPattern );
+                var date = m?(new Date(m[1]+"-"+m[2]+"-"+m[3]).getTime()):undefined;
+
                 var tracks = [];
                 for(var s = 0; s < json.points.length; s++) {
                    var track = GpxMapCommon.showTrack(json.points[s], 0);
@@ -175,8 +278,11 @@ var GpxMapPlugin = {
                          L.DomEvent.stopPropagation(e);
                          GpxMapPlugin.leaveMap(dir);
                       });
+                      track.poly.date = date;
                       tracks.push(track);
                       GpxMapPlugin.polyLines.push(track.poly);
+                      for(var f in GpxMapPlugin.polyLinesObservers)
+                           GpxMapPlugin.polyLinesObservers[f](track.poly);
                       GpxMapPlugin.dirs.push(dir);
                    }
                 }
@@ -194,6 +300,7 @@ var GpxMapPlugin = {
                    GpxMapPlugin.leaveMap(dir);
                 });
                 GpxMapPlugin.mc.addLayer(marker);
+                tracks[0].poly.marker = marker;
              },
              error:function(e, f) {
                 GpxMapPlugin.priorityCalls--;
@@ -211,3 +318,13 @@ var GpxMapPlugin = {
       }
    },
 };
+
+function gpxMapPluginChangeLang() {
+   if(jGallery.lang == 'fr') {
+      var tr = {
+         'Years range':'Années',
+      };
+      config.tr = $.extend(config.tr, tr);
+   }
+}
+gpxMapPluginChangeLang();
